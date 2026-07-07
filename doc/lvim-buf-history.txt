@@ -1,0 +1,108 @@
+*lvim-buf-history.txt*    Browser-style per-window buffer history navigation
+
+==============================================================================
+CONTENTS                                              *lvim-buf-history*
+
+  1. Introduction ........................... |lvim-buf-history-intro|
+  2. Setup .................................. |lvim-buf-history-setup|
+  3. Command ................................ |lvim-buf-history-command|
+  4. Keymaps ................................ |lvim-buf-history-keymaps|
+  5. Trail list ............................. |lvim-buf-history-list|
+  6. API .................................... |lvim-buf-history-api|
+
+==============================================================================
+1. INTRODUCTION                                 *lvim-buf-history-intro*
+
+Every window keeps its own ordered history of the buffers it has visited,
+with a position pointer — exactly like a browser tab. Visits are recorded
+automatically on |BufEnter| / |WinEnter| and deduped consecutively; going
+back and then visiting a NEW buffer discards the forward tail (browser
+semantics). Navigation performed by the plugin itself only moves the
+pointer — it is never re-recorded as a new visit.
+
+Unlisted buffers, terminals, prompts and nofile scratch/UI buffers never
+enter a trail (see `ignore` below). A deleted or wiped buffer (|BufDelete| /
+|BufWipeout|) is purged from every window's trail, and anything that dies in
+between is pruned on traversal — back/forward can never land in a dead
+buffer. Trails are capped at `max_len` entries per window and forgotten when
+the window closes. With `inherit` on, a new split starts with a copy of the
+trail of the window it was created from.
+
+==============================================================================
+2. SETUP                                        *lvim-buf-history-setup*
+
+setup() is required — it installs the recording autocmds, the command and
+the <Plug> maps. The full default configuration:
+>lua
+  require("lvim-buf-history").setup({
+      max_len = 100,            -- entries kept per window (oldest trimmed)
+      inherit = true,           -- new split copies its origin's trail
+      map_default_keys = false, -- map `keys` below; off = <Plug> maps only
+      keys = {
+          back = "[b",
+          forward = "]b",
+          list = "<Leader>bh",
+      },
+      ignore = {
+          -- never recorded (unlisted buffers never are, regardless)
+          buftype = { "terminal", "nofile", "prompt" },
+          filetype = {},
+      },
+  })
+<
+==============================================================================
+3. COMMAND                *lvim-buf-history-command* *:LvimBufHistory*
+
+  :LvimBufHistory               Show status (trail length + position).
+  :LvimBufHistory back          Go to the previous buffer in this window's
+                                history.
+  :LvimBufHistory forward       Go to the next buffer in this window's
+                                history.
+  :LvimBufHistory list          Browse the trail (see the next section).
+  :LvimBufHistory clear         Forget this window's history.
+
+==============================================================================
+4. KEYMAPS                                      *lvim-buf-history-keymaps*
+
+Three <Plug> maps are always defined:
+
+  <Plug>(LvimBufHistoryBack)     previous buffer in the window's trail
+  <Plug>(LvimBufHistoryForward)  next buffer in the window's trail
+  <Plug>(LvimBufHistoryList)     open the trail list
+
+Bind them yourself: >lua
+  vim.keymap.set("n", "[b", "<Plug>(LvimBufHistoryBack)")
+  vim.keymap.set("n", "]b", "<Plug>(LvimBufHistoryForward)")
+  vim.keymap.set("n", "<Leader>bh", "<Plug>(LvimBufHistoryList)")
+<
+Or set `map_default_keys = true` to map exactly the keys from `keys`. This
+is off by default: Neovim maps [b / ]b to |:bprevious| / |:bnext| natively,
+and the plugin never claims them without being asked.
+
+==============================================================================
+5. TRAIL LIST                                   *lvim-buf-history-list*
+
+`:LvimBufHistory list` opens the current window's trail in the centered,
+themed lvim-ui select — one row per entry, oldest first, with a file icon
+(from lvim-icons, when installed) and the buffer's name plus its short
+directory. The CURRENT position carries the `➤` pointer and is focused on
+open. Confirming a row (<CR>/<Space>) JUMPS the pointer to that entry — it
+sets the position, it does not append a new visit. <Esc> closes without
+moving.
+
+==============================================================================
+6. API                                          *lvim-buf-history-api*
+
+  setup({opts})           Configure and start (idempotent).
+  back()                  Previous buffer in the current window's trail
+                          (notifies at the oldest entry).
+  forward()               Next buffer in the current window's trail
+                          (notifies at the newest entry).
+  list()                  Open the trail list.
+  history({win})          Snapshot of a window's trail: a list of buffer
+                          numbers (oldest first) and the 1-based position
+                          pointer. Default: the current window.
+  clear({win})            Forget a window's trail (default: current).
+  status()                One status line (trail length + position).
+
+vim:tw=78:ts=8:noet:ft=help:norl:
