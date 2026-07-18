@@ -312,6 +312,20 @@ function M.register()
             end
         end,
     })
+    -- 'filetype' is frequently assigned AFTER BufEnter (ftdetect, or a plugin that shows a listed
+    -- scratch buffer and sets 'ft' post-creation), so the BufEnter filter saw ft == "" and recorded
+    -- a visit the user's ignore.filetype list meant to exclude. FileType is the event for that state
+    -- change — re-apply the record filter there (now that the real filetype is visible) and purge
+    -- retroactively, keeping ignore.filetype honest. A user who removed the ft from the ignore list
+    -- keeps the recorded visit (same rule as the TermOpen comment).
+    api.nvim_create_autocmd("FileType", {
+        group = grp,
+        callback = function(ev)
+            if not recordable(ev.buf) then
+                M.purge(ev.buf)
+            end
+        end,
+    })
 end
 
 return M
