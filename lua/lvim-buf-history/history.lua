@@ -209,9 +209,15 @@ end
 ---@return nil
 function M.purge(buf)
     for win, st in pairs(stacks) do
-        rebuild(st, buf)
-        if #st.entries == 0 then
+        if not api.nvim_win_is_valid(win) then
+            -- a window closed under :noautocmd (or with WinClosed in 'eventignore') never fired the
+            -- cleanup autocmd; drop its dead stack lazily so the registry self-heals on the next purge
             stacks[win] = nil
+        else
+            rebuild(st, buf)
+            if #st.entries == 0 then
+                stacks[win] = nil
+            end
         end
     end
 end
@@ -232,6 +238,12 @@ function M.inherit()
     if stacks[win] then
         return
     end
+    -- A float (picker, hover, completion menu) shows transient UI that never records a visit; copying a
+    -- trail into it is pure waste (WinClosed reaps it anyway). A float that later becomes a real editing
+    -- window builds its own trail on first BufEnter.
+    if api.nvim_win_get_config(win).relative ~= "" then
+        return
+    end
     local origin = vim.fn.win_getid(vim.fn.winnr("#"))
     local src = origin ~= 0 and stacks[origin] or nil
     if not src then
@@ -249,12 +261,16 @@ end
 ---@return { windows: integer, entries: integer, bad: integer }
 function M.stats()
     local windows, entries, bad = 0, 0, 0
-    for _, st in pairs(stacks) do
-        windows = windows + 1
-        entries = entries + #st.entries
-        local ok = (#st.entries == 0 and st.pos == 0) or (st.pos >= 1 and st.pos <= #st.entries)
-        if not ok then
-            bad = bad + 1
+    for win, st in pairs(stacks) do
+        if not api.nvim_win_is_valid(win) then
+            stacks[win] = nil -- same self-heal as purge(): don't count dead-window trails
+        else
+            windows = windows + 1
+            entries = entries + #st.entries
+            local ok = (#st.entries == 0 and st.pos == 0) or (st.pos >= 1 and st.pos <= #st.entries)
+            if not ok then
+                bad = bad + 1
+            end
         end
     end
     return { windows = windows, entries = entries, bad = bad }
