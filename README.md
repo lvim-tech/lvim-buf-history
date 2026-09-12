@@ -28,7 +28,7 @@ forward again, or pick any point of the trail from a themed list.
 
 ## Requirements
 
-- Neovim >= 0.10
+- Neovim >= 0.12
 - [lvim-utils](https://github.com/lvim-tech/lvim-utils) (config merge)
 - [lvim-ui](https://github.com/lvim-tech/lvim-ui) (the trail list; back/forward work without it)
 - [lvim-icons](https://github.com/lvim-tech/lvim-icons) (optional — file icons in the list)
