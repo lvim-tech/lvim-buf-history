@@ -134,6 +134,12 @@ end
 --- Step the current window one entry BACK along its trail. Prunes first, so a wiped buffer
 --- is skipped rather than jumped to. Returns false when already at the oldest entry (or no
 --- trail exists) — the caller owns the user-facing message.
+---
+--- The pointer is committed only once the switch has actually happened. Neovim can refuse to
+--- leave a buffer — 'nohidden' plus unsaved changes is E37 — and moving the pointer first left
+--- the trail describing a buffer that is not on screen: two refused backs walked the pointer two
+--- entries while the window never changed, and the next forward() then went somewhere the user
+--- had never been.
 ---@return boolean moved
 function M.back()
     local st = stacks[api.nvim_get_current_win()]
@@ -144,8 +150,11 @@ function M.back()
     if st.pos <= 1 then
         return false
     end
+    if not switch(st.entries[st.pos - 1]) then
+        return false
+    end
     st.pos = st.pos - 1
-    return switch(st.entries[st.pos])
+    return true
 end
 
 --- Step the current window one entry FORWARD along its trail (the mirror of back()).
@@ -159,8 +168,11 @@ function M.forward()
     if st.pos >= #st.entries then
         return false
     end
+    if not switch(st.entries[st.pos + 1]) then
+        return false
+    end
     st.pos = st.pos + 1
-    return switch(st.entries[st.pos])
+    return true
 end
 
 --- Jump `win`'s pointer to trail index `index` (1-based, oldest first) and show that
@@ -178,11 +190,15 @@ function M.go(win, index)
     if index < 1 or index > #st.entries or index == st.pos then
         return false
     end
-    st.pos = index
     if api.nvim_get_current_win() ~= win and api.nvim_win_is_valid(win) then
         api.nvim_set_current_win(win) -- the list UI runs its callback after its float closed; make sure
     end
-    return switch(st.entries[st.pos])
+    -- Same rule as back()/forward(): the pointer follows the switch, never leads it.
+    if not switch(st.entries[index]) then
+        return false
+    end
+    st.pos = index
+    return true
 end
 
 --- A pruned SNAPSHOT of `win`'s trail: a copy of the entries (oldest first) and the pointer.
