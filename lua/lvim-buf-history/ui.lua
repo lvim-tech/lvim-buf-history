@@ -2,7 +2,7 @@
 -- canonical lvim-ui select (centered, themed, cursor-managed). One row per trail entry,
 -- oldest first: a lead file icon from lvim-icons (soft dependency — plain labels without
 -- it), the buffer's tail name plus its short directory, and the CURRENT position marked
--- with the canonical `➤` pointer (mark_current is off — the pointer IS the marker; the
+-- with the canonical `󰅂` pointer (mark_current is off — the pointer IS the marker; the
 -- entry still goes in as current_item so the select focuses that row on open). Confirming
 -- a row JUMPS the pointer there (history.go — sets the position, never appends).
 --
@@ -14,9 +14,9 @@ local api = vim.api
 
 local M = {}
 
--- The canonical active-item pointer (U+27A4, display width 1); non-current rows pad with
+-- The canonical active-item pointer (U+F0142 nf-md-chevron_right, display width 1); non-current rows pad with
 -- a space so every label starts in the same column.
-local POINTER = "➤"
+local POINTER = "󰅂"
 
 --- The lead icon for a trail entry, resolved through lvim-icons (filename chain with a
 --- filetype hint; the filetype table for no-name buffers). nil without lvim-icons.
@@ -83,7 +83,7 @@ function M.list()
         title = "Buffer history",
         items = items,
         current_item = items[pos],
-        mark_current = false, -- the ➤ pointer is the marker; current_item only focuses the row
+        mark_current = false, -- the 󰅂 pointer is the marker; current_item only focuses the row
         callback = function(confirmed, index)
             if confirmed and index then
                 history.go(win, index)

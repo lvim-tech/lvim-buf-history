@@ -85,7 +85,7 @@ and the plugin never claims them without being asked.
 `:LvimBufHistory list` opens the current window's trail in the centered,
 themed lvim-ui select — one row per entry, oldest first, with a file icon
 (from lvim-icons, when installed) and the buffer's name plus its short
-directory. The CURRENT position carries the `➤` pointer and is focused on
+directory. The CURRENT position carries the `󰅂` pointer and is focused on
 open. Confirming a row (<CR>/<Space>) JUMPS the pointer to that entry — it
 sets the position, it does not append a new visit. <Esc> closes without
 moving.

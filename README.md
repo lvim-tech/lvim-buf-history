@@ -18,7 +18,7 @@ forward again, or pick any point of the trail from a themed list.
 - **Split inheritance** — a new window starts with a copy of the trail of the window it was
   split from (`inherit = true`), so surfing continues seamlessly after `:split` / `:vsplit`.
 - **Trail list** — `:LvimBufHistory list` opens the window's history in the centered,
-  themed lvim-ui select: file icons from lvim-icons, the current position marked with `➤`
+  themed lvim-ui select: file icons from lvim-icons, the current position marked with `󰅂`
   and focused on open. Confirming a row *jumps the pointer* to that entry (it does not
   append a new visit).
 - Trails are capped at `max_len` entries per window (the oldest are trimmed) and forgotten
